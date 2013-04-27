@@ -62,14 +62,23 @@ dfBooks$ChapterWordcount <- sapply(dfBooks$ChapterRow, function(x) (diff(x)))
 dfBooks$ChapterWordcount <- sapply(seq(1,7,1), function(x) (c(dfBooks$ChapterWordcount[[x]], length(dfBooks$SingleWords[[x]])-sum(dfBooks$ChapterWordcount[[x]]))))
 
 # Group by chapters
-dfBooks$SingleWords[[1]][dfBooks$ChapterRow[[1]][1]:dfBooks$ChapterWordcount[[1]][1]] # nope
 for(i in 1:length(dfBooks$Name)) {
   dfBooks$Chapter[[i]] <- sapply(seq(1, length(dfBooks$ChapterHeading[[i]]), 1), function(x, y, z, a) (y[z[x]:(z[x]+a[x]-1)]), y=dfBooks$SingleWords[[i]], z=dfBooks$ChapterRow[[i]], a=dfBooks$ChapterWordcount[[i]])
 }
 
-
 # Group by 1000 words
-dfBooks$Thousands <- sapply(dfBooks$SingleWords, function(x) (split(x, ceiling(seq_along(x)/1000))))
+dfBooks$Thousand <- sapply(dfBooks$SingleWords, function(x) (split(x, ceiling(seq_along(x)/1000))))
+
+# Single string chapters
+for(i in 1:length(dfBooks$Name)) {
+  dfBooks$ChapterString[[i]] <- sapply(seq(1, length(dfBooks$Chapter[[i]]), 1), function(x, y) (str_c(y[[x]], collapse=" ")), y=dfBooks$Chapter[[i]])
+}
+
+# Single string thousands
+for(i in 1:length(dfBooks$Name)) {
+  dfBooks$ThousandString[[i]] <- sapply(seq(1, length(dfBooks$Thousand[[i]]), 1), function(x, y) (str_c(y[[x]], collapse=" ")), y=dfBooks$Thousand[[i]])
+}
+
 
 cCorpus <- tm_map(cCorpus, removePunctuation)
 cCorpus <- tm_map(cCorpus, tolower)
