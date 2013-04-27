@@ -34,31 +34,39 @@ cCorpus <- tm_map(cCorpus, stripWhitespace)
 dfBooks$FirstLine <- sapply(cCorpus, function(x) (which(str_detect(x, "CHAPTER ONE"))[1]))
 # Find the last line (there may be two or more because of
 # samples from the other books).
-dfBooks$FinalLine <- sapply(cCorpus, function(x) (which(x == "Titles available in the Harry Potter series (in reading order):")[1]))-1
+dfBooks$FinalLine <- sapply(cCorpus, function(x) (which(x == "Titles available in the Harry Potter series in reading order")[1]-1))
 
 # Discard extraneous material.
-dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y ,z) (cCorpus[[x]][y[x]:z[x]]), y = dfBooks$FirstLine, z = dfBooks$FinalLine)
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y ,z) (cCorpus[[x]][y[[x]]:z[[x]]]), y = dfBooks$FirstLine, z = dfBooks$FinalLine)
 
 # Get all the chapter headings and their row numbers
 dfBooks$ChapterRow <- sapply(dfBooks$Text, function(x) (which(str_detect(x, "CHAPTER"))))
 dfBooks$ChapterHeading <- sapply(seq(1, 7, 1), function(x, y) (dfBooks$Text[[x]][y[[x]]]), y = dfBooks$ChapterRow)
 
-# Remove the crap from the chapter headings.
-dfBooks$ChapterHeading <- sapply(seq(1, 7, 1), function(x) (str_trim(str_replace_all(dfBooks$ChapterHeading[[x]], "(—|–)", ""))))
-
-
 # Split into single words.
 dfBooks$SingleWords <- sapply(dfBooks$Text, function(x) (unlist(str_split(x, " "))))
+# and remove blanks
+dfBooks$SingleWords <- sapply(dfBooks$SingleWords, function(x) (x[x!= ""]))
 
 # Get the chapter headings again
 # Get all the chapter headings and their row numbers
 dfBooks$ChapterRow <- sapply(dfBooks$SingleWords, function(x) (which(str_detect(x, "CHAPTER"))))
+
+# Now it can be lowercase
+dfBooks$SingleWords <- sapply(seq(1,7,1), function(x) (tolower(dfBooks$SingleWords[[x]])))
 
 # Chapter wordcount
 # The first command misses the last chapter of each book.
 dfBooks$ChapterWordcount <- sapply(dfBooks$ChapterRow, function(x) (diff(x)))
 # Append the last chapter of each book
 dfBooks$ChapterWordcount <- sapply(seq(1,7,1), function(x) (c(dfBooks$ChapterWordcount[[x]], length(dfBooks$SingleWords[[x]])-sum(dfBooks$ChapterWordcount[[x]]))))
+
+# Group by chapters
+dfBooks$SingleWords[[1]][dfBooks$ChapterRow[[1]][1]:dfBooks$ChapterWordcount[[1]][1]] # nope
+for(i in 1:length(dfBooks$Name)) {
+  dfBooks$Chapter[[i]] <- sapply(seq(1, length(dfBooks$ChapterHeading[[i]]), 1), function(x, y, z, a) (y[z[x]:(z[x]+a[x]-1)]), y=dfBooks$SingleWords[[i]], z=dfBooks$ChapterRow[[i]], a=dfBooks$ChapterWordcount[[i]])
+}
+
 
 # Group by 1000 words
 dfBooks$Thousands <- sapply(dfBooks$SingleWords, function(x) (split(x, ceiling(seq_along(x)/1000))))
