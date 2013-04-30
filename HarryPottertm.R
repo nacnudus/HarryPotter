@@ -38,6 +38,12 @@ dfBooks$FinalLine <- sapply(cCorpus, function(x) (which(x == "Titles available i
 
 # Discard extraneous material.
 dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y ,z) (cCorpus[[x]][y[[x]]:z[[x]]]), y = dfBooks$FirstLine, z = dfBooks$FinalLine)
+# Tidy up cCorpus
+rm(cCorpus)
+
+# Fix some names
+# "Dark Lord" >- "DarkLord"
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Dark Lord", "DarkLord")), y = dfBooks$Text)
 
 # Get all the chapter headings and their row numbers
 dfBooks$ChapterRow <- sapply(dfBooks$Text, function(x) (which(str_detect(x, "CHAPTER"))))
@@ -79,7 +85,39 @@ for(i in 1:length(dfBooks$Name)) {
   dfBooks$ThousandString[[i]] <- sapply(seq(1, length(dfBooks$Thousand[[i]]), 1), function(x, y) (str_c(y[[x]], collapse=" ")), y=dfBooks$Thousand[[i]])
 }
 
+# Count regex
+sapply(dfBooks$Thousand[[2]], function(x) (sum(str_count(x, "voldemort|youknowwho|darklord|riddle"))))
 
-cCorpus <- tm_map(cCorpus, removePunctuation)
-cCorpus <- tm_map(cCorpus, tolower)
-cCorpus <- tm_map(cCorpus, stripWhitespace)
+# Function to plot cumulative occurrences of a word
+# Use: CumSumWord(x=regex, y=dfBooks$[[1]], z="anything")
+CumSumWord <- function(x, y, z) {
+  PlotWord <- x
+  PlotBook <- y
+  PlotTitle <- z
+  WordVector <- as.vector(sapply(PlotBook, function(x, y) (sum(str_count(x, y))), y = PlotWord))
+  xaxis <- seq_along(WordVector)
+  yaxis <- cumsum(WordVector)
+  Plot <- plot(xaxis, yaxis, type = "n")
+  lines(xaxis, yaxis)
+  title(main = paste(z, "-", x))
+  list(Book=as.character(z), Word=x, WordVector=WordVector, Plot=Plot)
+}
+
+# CumSumWord through the whole series
+# requires function CumSumWord
+sapply(seq(1,7,1), function (x) (CumSumWord("voldemort|youknowwho|darklord|riddle", dfBooks$Thousand[[x]], dfBooks$Name[x])))
+
+# Starting to plot
+# Get max(xaxis) per chapter
+dfBooks$ChapterXmax <- sapply(seq(1,7,1), function(x, y, z) (y[[x]] + z[[x]] - 1), y=dfBooks$ChapterRow, z=dfBooks$ChapterWordcount)
+# Shade by chapter
+dfPSChapter <- data.frame(Number=1:length(dfBooks$ChapterHeading[[1]]), xmin=dfBooks$ChapterRow[[1]]/1000, xmax=(dfBooks$ChapterRow[[1]]+dfBooks$ChapterWordcount[[1]]-1)/1000)
+# CumSumWord
+dfVoldemort <- sapply(dfBooks$Thousand[[1]], function(x) (sum(str_count(x, "voldemort|youknowwho|darklord|riddle"))))
+dfVoldemort <- data.frame(x=1:length(dfVoldemort),y=cumsum(dfVoldemort)
+# Plot
+ggplot(dfPSChapter,aes(xmin=xmin, xmax=xmax, ymin=0, ymax=100, fill=factor(Number %% 2 == 0)), scale_colour_manual(values = c("red","blue"))) + geom_rect() + scale_fill_manual(values = c("black", "white"), guide=FALSE)
+# Plot with cumsum
+ggplot() + geom_rect(data=dfPSChapter,xmin=xmin, xmax=xmax, ymin=0, ymax=100, fill=factor(Number %% 2 == 0), scale_colour_manual(values = c("red","blue"))) + scale_fill_manual(values = c("black", "white"), guide=FALSE)
+# this worked for dfPSChapter to do the chapter bands.
+ggplot() + geom_rect(data=dfPSChapter, aes(xmin=xmin, xmax=xmax, ymin=0, ymax=100, fill=factor(Number %% 2 == 0))) + scale_fill_manual(values = c("black", "white"), guide=FALSE)
