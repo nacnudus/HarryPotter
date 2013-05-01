@@ -85,6 +85,9 @@ for(i in 1:length(dfBooks$Name)) {
   dfBooks$ThousandString[[i]] <- sapply(seq(1, length(dfBooks$Thousand[[i]]), 1), function(x, y) (str_c(y[[x]], collapse=" ")), y=dfBooks$Thousand[[i]])
 }
 
+# start making a vector of Name, Thousands
+dfBooks$ThousandVector <- sapply(seq(1,7,1), function(x) (t(expand.grid(dfBooks$Name[[x]], dfBooks$ThousandString[[x]]))))
+
 # Count regex
 sapply(dfBooks$Thousand[[2]], function(x) (sum(str_count(x, "voldemort|youknowwho|darklord|riddle"))))
 
