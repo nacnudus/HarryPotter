@@ -6,6 +6,7 @@
 # UPDATE: use stringr:str_join like Para <- str_join(Thousand, collapse = " ")
 require(tm)
 require(stringr)
+require(plyr) # for round_any
 
 # set up a data frame
 BookNames <- c(
@@ -47,7 +48,7 @@ dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Da
 
 # Get all the chapter headings and their row numbers
 dfBooks$ChapterRow <- sapply(dfBooks$Text, function(x) (which(str_detect(x, "CHAPTER"))))
-dfBooks$ChapterHeading <- sapply(seq(1, 7, 1), function(x, y) (dfBooks$Text[[x]][y[[x]]]), y = dfBooks$ChapterRow)
+dfBooks$ChapterHeading <- sapply(seq(1, 7, 1), function(x, y) (str_trim(dfBooks$Text[[x]][y[[x]]])), y = dfBooks$ChapterRow)
 
 # Split into single words.
 dfBooks$SingleWords <- sapply(dfBooks$Text, function(x) (unlist(str_split(x, " "))))
@@ -85,11 +86,19 @@ for(i in 1:length(dfBooks$Name)) {
   dfBooks$ThousandString[[i]] <- sapply(seq(1, length(dfBooks$Thousand[[i]]), 1), function(x, y) (str_c(y[[x]], collapse=" ")), y=dfBooks$Thousand[[i]])
 }
 
-# start making a vector of Name, Thousands
-dfBooks$ThousandVector <- sapply(seq(1,7,1), function(x) (t(expand.grid(dfBooks$Name[[x]], dfBooks$ThousandString[[x]]))))
+# make a vector of Name, ThousandStrings
+x <- setNames(rev(stack(with(dfBooks, setNames(ThousandString, Name)))), c("Name", "ThousandString"))
+
+# add chapter headings to the thousand vector
+chapterThousand <- function(x) (sapply(seq_along(x), function(y) ((round_any(sum(x[1:y]), 1000, ceiling)/1000) - (round_any(sum(x[0:(y-1)]), 1000, ceiling)/1000))))
+dfBooks$ChapterThousand <- sapply(dfBooks$ChapterWordcount, function(x) (chapterThousand(x)))
+dfBooks$ChapterThousandHeading <- sapply(seq_along(dfBooks$Name), function(x) (rep(dfBooks$ChapterHeading[[x]], dfBooks$ChapterThousand[[x]])))
+y <- setNames(rev(stack(with(dfBooks, setNames(ChapterThousandHeading, Name)))), c("Name", "ChapterThousandHeading"))
+# z is the vector to be graphed
+z <- cbind(y[,1:2], x[,2])
 
 # Count regex
-sapply(dfBooks$Thousand[[2]], function(x) (sum(str_count(x, "voldemort|youknowwho|darklord|riddle"))))
+cbind(z[,1:2], harry=str_count(z[,3], "harry"))
 
 # Function to plot cumulative occurrences of a word
 # Use: CumSumWord(x=regex, y=dfBooks$[[1]], z="anything")
