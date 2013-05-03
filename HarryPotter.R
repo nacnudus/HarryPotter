@@ -1,10 +1,4 @@
-# Using tm - works out the same as vector source, it seems to me.
-# I'm looking for a way to search across vector elements, so across
-# line endings.  UPDATE: use makeChunks which doesn't split across
-# paragraphs or documents so you can split into 1000-line chunks.
-# Also look at lda which can do word counts of documents.
-# UPDATE: use stringr:str_join like Para <- str_join(Thousand, collapse = " ")
-require(tm)
+require(tm) # for removing punctuation, whitespace, etc.
 require(stringr)
 require(plyr) # for round_any
 require(reshape2)
