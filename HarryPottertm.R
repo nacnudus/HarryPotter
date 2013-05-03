@@ -9,6 +9,7 @@ require(stringr)
 require(plyr) # for round_any
 require(reshape2)
 require(ggplot2)
+require(grid) # for theme(panel.margin = unit(0, "inches"))
 
 # set up a data frame
 BookNames <- c(
@@ -51,7 +52,7 @@ dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Da
 # Get all the chapter headings and their row numbers
 dfBooks$ChapterRow <- sapply(dfBooks$Text, function(x) (which(str_detect(x, "CHAPTER"))+6)) # the +6 offsets from "CHAPTER ONE" to "The Boy Who Lived"
 # Numbered chapter headings
-dfBooks$ChapterHeading <- sapply(seq(1, 7, 1), function(x, y) (str_trim(paste(seq_along(y[[x]]), dfBooks$Text[[x]][y[[x]]]))), y = dfBooks$ChapterRow)
+dfBooks$ChapterHeading <- sapply(seq(1, 7, 1), function(x, y) (str_trim(paste(sprintf("%02d", seq_along(y[[x]])), dfBooks$Text[[x]][y[[x]]]))), y = dfBooks$ChapterRow)
 # Number the chapters within the books
 
 
@@ -124,9 +125,13 @@ wordcount <- function(z, x) {
 # example graph
 voldemort <- wordcount(z, "voldemort|youknowwho|he who must not be named|darklord|riddle")
 names(voldemort)[4] <- "Voldemort"
-voldemort$NameFactor = factor(voldemort$Name, levels=c("PS", "CS", "PA", "GF", "OP", "HP", "DH")) # for correct series order
 voldemort <- ddply(voldemort, c("Name"), transform, Wordcount=cumsum(Voldemort))
 voldemort <- melt(voldemort, measure.vars="Voldemort")
-Pvoldemort <- qplot(x=Thousand, y=cumsum(value), data=voldemort, geom="line") + facet_grid(. ~ NameFactor + ChapterThousandHeading, scale="free_x", space="free_x")
-Pvoldemort + theme(strip.text.x = element_text(angle = 90, hjust = 1))
+Pvoldemort <- ggplot(voldemort, aes(x=Thousand, y=cumsum(value))) + geom_line() + facet_grid(. ~ Name + ChapterThousandHeading, scale="free_x", space="free_x", drop=FALSE) + geom_rect(data = shade,aes(fill = Name),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.3)
+Pvoldemort + theme(strip.text.x = element_text(angle = 90, hjust = 1, size=8), axis.text.x = element_text(angle=90, hjust=1, size=8), panel.grid.minor.y = element_line(colour=NULL), panel.margin = unit(0, "inches"))
 #####
+# for shading the books/chapters
+shade <- as.data.frame(unique(voldemort$Name))
+names(shade)[1] <- "Name"
+shade$Number <- 1
++ geom_rect(data = shade,aes(fill = Name),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.3)
