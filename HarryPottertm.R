@@ -7,16 +7,18 @@
 require(tm)
 require(stringr)
 require(plyr) # for round_any
+require(reshape2)
+require(ggplot2)
 
 # set up a data frame
 BookNames <- c(
-  "PS"
-  , "CS"
-  , "PA"
-  , "GF"
-  , "OP"
-  , "HP"
-  , "DH"
+  "1 PS"
+  , "2 CS"
+  , "3 PA"
+  , "4 GF"
+  , "5 OP"
+  , "6 HP"
+  , "7 DH"
 )
 dfBooks <- data.frame(Name = BookNames)
 rownames(dfBooks) <- dfBooks$Name
@@ -47,7 +49,7 @@ rm(cCorpus)
 dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Dark Lord", "DarkLord")), y = dfBooks$Text)
 
 # Get all the chapter headings and their row numbers
-dfBooks$ChapterRow <- sapply(dfBooks$Text, function(x) (which(str_detect(x, "CHAPTER"))))
+dfBooks$ChapterRow <- sapply(dfBooks$Text, function(x) (which(str_detect(x, "CHAPTER"))+6)) # the +6 offsets from "CHAPTER ONE" to "The Boy Who Lived"
 dfBooks$ChapterHeading <- sapply(seq(1, 7, 1), function(x, y) (str_trim(dfBooks$Text[[x]][y[[x]]])), y = dfBooks$ChapterRow)
 
 # Split into single words.
@@ -57,6 +59,7 @@ dfBooks$SingleWords <- sapply(dfBooks$SingleWords, function(x) (x[x!= ""]))
 
 # Get the chapter headings again
 # Get all the chapter headings and their row numbers
+# This time don't offset from "CHAPTER ONE"
 dfBooks$ChapterRow <- sapply(dfBooks$SingleWords, function(x) (which(str_detect(x, "CHAPTER"))))
 
 # Now it can be lowercase
@@ -96,40 +99,31 @@ dfBooks$ChapterThousandHeading <- sapply(seq_along(dfBooks$Name), function(x) (r
 y <- setNames(rev(stack(with(dfBooks, setNames(ChapterThousandHeading, Name)))), c("Name", "ChapterThousandHeading"))
 # z is the vector to be graphed
 z <- cbind(y[,1:2], x[,2])
+# tidy
+rm(x,y)
 
 # Count regex
-cbind(z[,1:2], harry=str_count(z[,3], "harry"))
+cbind(z[,1:2], str_count(z[,3], "harry"))
 
-# Function to plot cumulative occurrences of a word
-# Use: CumSumWord(x=regex, y=dfBooks$[[1]], z="anything")
-CumSumWord <- function(x, y, z) {
-  PlotWord <- x
-  PlotBook <- y
-  PlotTitle <- z
-  WordVector <- as.vector(sapply(PlotBook, function(x, y) (sum(str_count(x, y))), y = PlotWord))
-  xaxis <- seq_along(WordVector)
-  yaxis <- cumsum(WordVector)
-  Plot <- plot(xaxis, yaxis, type = "n")
-  lines(xaxis, yaxis)
-  title(main = paste(z, "-", x))
-  list(Book=as.character(z), Word=x, WordVector=WordVector, Plot=Plot)
+######
+# wordcount function
+# given a vector like z of book name, thousand per book, chapter heading and thousand words,
+# returns book name, chapter heading and count of a regex pattern in the thousand words.
+# Third column named by the regex pattern for nice plotting.
+wordcount <- function(z, x) {
+  a <- cbind(z[,1:2], Thousand=sequence(rle(as.character(z$Name))$lengths), str_count(z[,3], x))
+  names(a)[4] <- x
+  return(a)
 }
+######
 
-# CumSumWord through the whole series
-# requires function CumSumWord
-sapply(seq(1,7,1), function (x) (CumSumWord("voldemort|youknowwho|darklord|riddle", dfBooks$Thousand[[x]], dfBooks$Name[x])))
-
-# Starting to plot
-# Get max(xaxis) per chapter
-dfBooks$ChapterXmax <- sapply(seq(1,7,1), function(x, y, z) (y[[x]] + z[[x]] - 1), y=dfBooks$ChapterRow, z=dfBooks$ChapterWordcount)
-# Shade by chapter
-dfPSChapter <- data.frame(Number=1:length(dfBooks$ChapterHeading[[1]]), xmin=dfBooks$ChapterRow[[1]]/1000, xmax=(dfBooks$ChapterRow[[1]]+dfBooks$ChapterWordcount[[1]]-1)/1000)
-# CumSumWord
-dfVoldemort <- sapply(dfBooks$Thousand[[1]], function(x) (sum(str_count(x, "voldemort|youknowwho|darklord|riddle"))))
-dfVoldemort <- data.frame(x=1:length(dfVoldemort),y=cumsum(dfVoldemort)
-# Plot
-ggplot(dfPSChapter,aes(xmin=xmin, xmax=xmax, ymin=0, ymax=100, fill=factor(Number %% 2 == 0)), scale_colour_manual(values = c("red","blue"))) + geom_rect() + scale_fill_manual(values = c("black", "white"), guide=FALSE)
-# Plot with cumsum
-ggplot() + geom_rect(data=dfPSChapter,xmin=xmin, xmax=xmax, ymin=0, ymax=100, fill=factor(Number %% 2 == 0), scale_colour_manual(values = c("red","blue"))) + scale_fill_manual(values = c("black", "white"), guide=FALSE)
-# this worked for dfPSChapter to do the chapter bands.
-ggplot() + geom_rect(data=dfPSChapter, aes(xmin=xmin, xmax=xmax, ymin=0, ymax=100, fill=factor(Number %% 2 == 0))) + scale_fill_manual(values = c("black", "white"), guide=FALSE)
+#####
+# example graph
+voldemort <- wordcount(z, "voldemort|youknowwho|he who must not be named|darklord|riddle")
+names(voldemort)[4] <- "Voldemort"
+voldemort$NameFactor = factor(voldemort$Name, levels=c("PS", "CS", "PA", "GF", "OP", "HP", "DH")) # for correct series order
+voldemort <- ddply(voldemort, c("Name"), transform, Wordcount=cumsum(Voldemort))
+voldemort <- melt(voldemort, measure.vars="Voldemort")
+Pvoldemort <- qplot(x=Thousand, y=cumsum(value), data=voldemort, geom="line") + facet_grid(. ~ NameFactor + ChapterThousandHeading, scale="free_x", space="free_x")
+Pvoldemort + theme(strip.text.x = element_text(angle = 90, hjust = 1))
+#####
