@@ -50,7 +50,10 @@ dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Da
 
 # Get all the chapter headings and their row numbers
 dfBooks$ChapterRow <- sapply(dfBooks$Text, function(x) (which(str_detect(x, "CHAPTER"))+6)) # the +6 offsets from "CHAPTER ONE" to "The Boy Who Lived"
-dfBooks$ChapterHeading <- sapply(seq(1, 7, 1), function(x, y) (str_trim(dfBooks$Text[[x]][y[[x]]])), y = dfBooks$ChapterRow)
+# Numbered chapter headings
+dfBooks$ChapterHeading <- sapply(seq(1, 7, 1), function(x, y) (str_trim(paste(seq_along(y[[x]]), dfBooks$Text[[x]][y[[x]]]))), y = dfBooks$ChapterRow)
+# Number the chapters within the books
+
 
 # Split into single words.
 dfBooks$SingleWords <- sapply(dfBooks$Text, function(x) (unlist(str_split(x, " "))))
