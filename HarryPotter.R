@@ -125,12 +125,13 @@ voldemort <- melt(voldemort, measure.vars="Voldemort")
 shade <- as.data.frame(unique(voldemort$Name))
 names(shade)[1] <- "Name"
 shade$Number <- shade$Thousand <- shade$value <- 1
+shade$bw <- cbind(1:7, 1:2)[, 2]
 # plot
-Pvoldemort <- qplot(x=Thousand, y=cumsum(value), data=voldemort) + geom_line() + facet_grid(. ~ Name, scale="free_x", space="free_x", drop=FALSE) + geom_rect(data = shade,aes(fill = Name),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.3)
+Pvoldemort <- qplot(x=Thousand, y=cumsum(value), data=voldemort) + geom_line() + facet_grid(. ~ Name, scale="free_x", space="free_x", drop=FALSE) + geom_rect(data = shade, aes(fill = bw),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.3)
 Pvoldemort + theme(strip.text.x = element_text(angle = 90, hjust = 1, size=8), axis.text.x = element_text(angle=90, hjust=1, size=8), panel.grid.minor.y = element_line(colour=NULL), panel.margin = unit(0, "inches"))
 #####
 # for shading the books/chapters
-shade <- as.data.frame(unique(voldemort$Name))
+shade <- as.data.frame(unique(voldemort$ChapterThousandHeading))
 names(shade)[1] <- "Name"
 shade$Number <- shade$Thousand <- shade$value <- 1
 + geom_rect(data = shade,aes(fill = Name),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.3)
