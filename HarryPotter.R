@@ -42,13 +42,15 @@ rm(cCorpus)
 # Fix some names
 # "Dark Lord" >- "DarkLord"
 dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Dark Lord", "DarkLord")), y = dfBooks$Text)
+# "He Who Must Not Be Named"
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "He Who Must Not Be Named", "hewhomustnotbenamed")), y = dfBooks$Text)
+# "Draco Malfoy" >- "dracomalfoy"
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Draco Malfoy", "dracomalfoy")), y = dfBooks$Text)
 
 # Get all the chapter headings and their row numbers
 dfBooks$ChapterRow <- sapply(dfBooks$Text, function(x) (which(str_detect(x, "CHAPTER"))+6)) # the +6 offsets from "CHAPTER ONE" to "The Boy Who Lived"
 # Numbered chapter headings
-dfBooks$ChapterHeading <- sapply(seq(1, 7, 1), function(x, y) (str_trim(paste(sprintf("%02d", seq_along(y[[x]])), dfBooks$Text[[x]][y[[x]]]))), y = dfBooks$ChapterRow)
-# Number the chapters within the books
-
+dfBooks$ChapterHeading <- sapply(seq(1, 7, 1), function(x, y) (str_trim(paste(sprintf("%02d", seq_along(y[[x]])), dfBooks$Text[[x]][y[[x]]]))), y = dfBooks$ChapterRow) # Number the chapters within the books
 
 # Split into single words.
 dfBooks$SingleWords <- sapply(dfBooks$Text, function(x) (unlist(str_split(x, " "))))
@@ -73,7 +75,32 @@ dfBooks$ChapterWordcount <- sapply(seq(1,7,1), function(x) (c(dfBooks$ChapterWor
 for(i in 1:length(dfBooks$Name)) {
   dfBooks$Chapter[[i]] <- sapply(seq(1, length(dfBooks$ChapterHeading[[i]]), 1), function(x, y, z, a) (y[z[x]:(z[x]+a[x]-1)]), y=dfBooks$SingleWords[[i]], z=dfBooks$ChapterRow[[i]], a=dfBooks$ChapterWordcount[[i]])
 }
+rm(i)
 
+# make a vector of Name, Chapter Heading, Words
+x <- rep(unlist(dfBooks$ChapterHeading), unlist(dfBooks$ChapterWordcount))
+y <- stack(with(dfBooks, setNames(SingleWords,Name)))
+z <- cbind(x, y)
+rm(x, y) # tidy
+z <- z[, c(3,1,2)]
+names(z) <- c("Book", "Chapter", "Word")
+z <- melt(z)
+z$Voldemort <- str_count(z$Word, "voldemort|youknowwho|hewhomustnotbenamed|darklord|riddle")
+a <- z[z$Voldemort!=0,] # restrict to interesting points
+voldemort <- ggplot() + geom_line(data=a, aes(x=a$Word, y=cumsum(a$Voldemort)))
+# b and c are for chapter shading
+b <- dcast(z, Book + Chapter ~ ., length)
+names(b)[3] <- "Count"
+c <- data.frame(xmin=cumsum(b$Count)-b$Count+1, xmax=cumsum(b$Count))
+voldemort + geom_rect(data=c, aes(xmin=xmin, xmax=xmax, fill=factor(seq_along(xmin) %% 2)), ymin=-Inf, ymax=Inf, linetype="blank", colour=scale_fill_manual(values = alpha(c("blue", "red"), 0.2))) + theme(legend.position="none")
+# d and e are for book shading
+d <- dcast(z, Book ~ ., length)
+names(d)[2] <- "Count"
+e <- data.frame(xmin=cumsum(d$Count)-d$Count+1, xmax=cumsum(d$Count))
+voldemort + geom_rect(data=c, aes(xmin=xmin, xmax=xmax, fill=factor(seq_along(xmin) %% 2)), ymin=-Inf, ymax=Inf, linetype="blank", alpha=0.2, colour=scale_fill_manual(values=c("blue", "red"))) + theme(legend.position="none") + geom_rect(data=e, aes(xmin=xmin, xmax=xmax, fill=factor(seq_along(xmin) %% 2)), ymin=-Inf, ymax=Inf, linetype="blank", colour=scale_fill_manual(values=c("black", "white")), alpha=0.2)
+
+
+###########################################
 # Group by 1000 words
 dfBooks$Thousand <- sapply(dfBooks$SingleWords, function(x) (split(x, ceiling(seq_along(x)/1000))))
 
@@ -81,6 +108,8 @@ dfBooks$Thousand <- sapply(dfBooks$SingleWords, function(x) (split(x, ceiling(se
 for(i in 1:length(dfBooks$Name)) {
   dfBooks$ChapterString[[i]] <- sapply(seq(1, length(dfBooks$Chapter[[i]]), 1), function(x, y) (str_c(y[[x]], collapse=" ")), y=dfBooks$Chapter[[i]])
 }
+# tidy
+rm(i)
 
 # Single string thousands
 for(i in 1:length(dfBooks$Name)) {
@@ -109,7 +138,7 @@ cbind(z[,1:2], str_count(z[,3], "harry"))
 # returns book name, chapter heading and count of a regex pattern in the thousand words.
 # Third column named by the regex pattern for nice plotting.
 wordcount <- function(z, x) {
-  a <- cbind(z[,1:2], Thousand=sequence(rle(as.character(z$Name))$lengths), str_count(z[,3], x))
+  a <- cbind(z[,1:2], Thousand=sequence(rle(as.character(z$Name))$lengths), str_count(z[,3], x), PureThousand=seq_along(z$Name))
   names(a)[4] <- x
   return(a)
 }
@@ -122,16 +151,27 @@ names(voldemort)[4] <- "Voldemort"
 voldemort <- ddply(voldemort, c("Name"), transform, Wordcount=cumsum(Voldemort))
 voldemort <- melt(voldemort, measure.vars="Voldemort")
 # for shading the books/chapters
-shade <- as.data.frame(unique(voldemort$Name))
+shade <- as.data.frame(unique(paste(voldemort$Name, voldemort$ChapterThousandHeading)))
 names(shade)[1] <- "Name"
 shade$Number <- shade$Thousand <- shade$value <- 1
-shade$bw <- cbind(1:7, 1:2)[, 2]
+shade$bw <- cbind(seq_along(shade$Name), 1:2)[, 2]
 # plot
-Pvoldemort <- qplot(x=Thousand, y=cumsum(value), data=voldemort) + geom_line() + facet_grid(. ~ Name, scale="free_x", space="free_x", drop=FALSE) + geom_rect(data = shade, aes(fill = bw),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.3)
-Pvoldemort + theme(strip.text.x = element_text(angle = 90, hjust = 1, size=8), axis.text.x = element_text(angle=90, hjust=1, size=8), panel.grid.minor.y = element_line(colour=NULL), panel.margin = unit(0, "inches"))
+Pvoldemort <- qplot(x=Thousand, y=cumsum(value), data=voldemort) + geom_line() + facet_grid(. ~ Name + ChapterThousandHeading, scale="free_x", space="free_x", drop=FALSE) + geom_rect(data = shade, aes(fill = bw),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.3)
+Pvoldemort + theme(strip.text.x = element_text(angle = 90, hjust = 0, size=8), axis.text.x = element_text(angle=90, hjust=1, size=8), panel.grid.minor.y = element_line(colour=NULL), panel.margin = unit(0, "inches"))
 #####
 # for shading the books/chapters
-shade <- as.data.frame(unique(voldemort$ChapterThousandHeading))
+shade <- as.data.frame(unique(paste(voldemort$Name, voldemort$ChapterThousandHeading)))
 names(shade)[1] <- "Name"
 shade$Number <- shade$Thousand <- shade$value <- 1
 + geom_rect(data = shade,aes(fill = Name),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.3)
+
+# playing with simpler graphs
+shade <- dcast(mvoldemort, Name + ChapterThousandHeading ~ .)[, -3]
+shade$xmin <- dcast(mvoldemort, Name + ChapterThousandHeading ~ variable, min)[, 3]
+shade$xmax <- dcast(mvoldemort, Name + ChapterThousandHeading ~ variable, max)[, 3]
+
+###############################
+# demonstrate shading
+x <- data.frame(x=1:10, y=sample(1:10,10, replace=TRUE))
+y <- data.frame(a=seq(1,10,2), b=seq(3,11,2))
+ggplot() + geom_line(data=x, aes(x=x, y=cumsum(y))) + geom_rect(data=y, aes(xmin=a, xmax=b, fill=factor(a), alpha=0.3), ymin=-Inf, ymax=Inf)
