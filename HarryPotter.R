@@ -4,6 +4,7 @@ require(plyr) # for round_any
 require(reshape2)
 require(ggplot2)
 require(grid) # for theme(panel.margin = unit(0, "inches"))
+require(snowball) # for stemming?
 
 # set up a data frame
 BookNames <- c(
