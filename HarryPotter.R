@@ -51,27 +51,37 @@ dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y ,z) (cCorpus[[x]][y[[x]]:z[[x
 rm(cCorpus)
 
 # Fix some names
-# "Dark Lord" >- "DarkLord"
-dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Dark Lord", "DarkLord")), y = dfBooks$Text)
-# "He Who Must Not Be Named"
-dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "He Who Must Not Be Named", "hewhomustnotbenamed")), y = dfBooks$Text)
-# "Draco Malfoy" >- "dracomalfoy"
-dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Draco Malfoy", "dracomalfoy")), y = dfBooks$Text)
-# "Severus Snape" >- "severussnape"
-dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Severus Snape", "severussnape")), y = dfBooks$Text)
-# "Albus Dumbledore" >- "albusdumbledore"
-dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Albus Dumbledore", "albusdumbledore")), y = dfBooks$Text)
-# "Harry Potter" >- "harrypotter"
-dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Harry Potter", "harrypotter")), y = dfBooks$Text)
-# "Ronald Weasley" >- "ronaldweasley"
-dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Ronald Weasley", "ronaldweasley")), y = dfBooks$Text)
-# "Ron Weasley" >- "ronweasley"
-dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Ron Weasley", "ronweasley")), y = dfBooks$Text)
+# "Dark Lord" >- "Voldemort"
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Dark Lord", "Voldemort")), y = dfBooks$Text)
+# "He Who Must Not Be Named" >- "Voldemort"
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "He Who Must Not Be Named", "Voldemort")), y = dfBooks$Text)
+# "You-Know-Who" >- "Voldemort
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "You-Know-Who", "Voldemort")), y = dfBooks$Text)
+# "Tom" >- "Voldemort
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Tom", "Voldemort")), y = dfBooks$Text)
+# "Draco Malfoy" >- "Draco"
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Draco Malfoy", "Draco")), y = dfBooks$Text)
+# "Severus Snape" >- "Snape"
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Severus Snape", "Snape")), y = dfBooks$Text)
+# "Severus" >- "Snape"
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Severus", "Snape")), y = dfBooks$Text)
+# "Albus Dumbledore" >- "Dumbledore"
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Albus Dumbledore", "Dumbledore")), y = dfBooks$Text)
+# "Albus" >- "Dumbledore"
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Albus Dumbledore", "Dumbledore")), y = dfBooks$Text)
+# "Harry Potter" >- "Harry"
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Harry Potter", "Harry")), y = dfBooks$Text)
+# "Ronald Weasley" >- "Ron"
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Ronald Weasley", "Ron")), y = dfBooks$Text)
+# "Ron Weasley" >- "Ron"
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Ron Weasley", "Ron")), y = dfBooks$Text)
 # Todo: Fix all the other Weasleys too
-# "Hermione Granger" >- "hermionegranger"
-dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Hermione Granger", "hermionegranger")), y = dfBooks$Text)
-# "Rubeus Hagrid" >- "rubeushagrid"
-dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Harry Potter", "harrypotter")), y = dfBooks$Text)
+# "Hermione Granger" >- "Hermione"
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Hermione Granger", "Hermione")), y = dfBooks$Text)
+# "Rubeus Hagrid" >- "Hagrid"
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Rubeus Hagrid", "Hagrid")), y = dfBooks$Text)
+# "Rubeus" >- "Hagrid"
+dfBooks$Text <- sapply(seq(1, 7, 1), function(x ,y) (str_replace_all(y[[x]], "Rubeus", "Hagrid")), y = dfBooks$Text)
 
 # Get all the chapter headings and their row numbers
 dfBooks$ChapterRow <- sapply(dfBooks$Text, function(x) (which(str_detect(x, "CHAPTER"))+6)) # the +6 offsets from "CHAPTER ONE" to "The Boy Who Lived"
