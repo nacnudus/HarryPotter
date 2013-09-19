@@ -140,4 +140,21 @@ c <- data.frame(text=unique(paste(z$Book, z$Chapter)), xmin=cumsum(b$Count)-b$Co
 d <- dcast(z, Book ~ ., length)
 names(d)[2] <- "Count"
 e <- data.frame(xmin=cumsum(d$Count)-d$Count+1, xmax=cumsum(d$Count))
-voldemort + geom_rect(data=c, aes(xmin=xmin, xmax=xmax, fill=factor(seq_along(xmin) %% 2)), ymin=-Inf, ymax=Inf, linetype="blank", alpha=0.2, colour=scale_fill_manual(values=c("blue", "red"))) + theme(legend.position="none") + geom_rect(data=e, aes(xmin=xmin, xmax=xmax, fill=factor(seq_along(xmin) %% 2)), ymin=-Inf, ymax=Inf, linetype="blank", colour=scale_fill_manual(values=c("black", "white")), alpha=0.2) + geom_text(data=c, aes(x=xmin+((xmax-xmin)/2), y=0, label=text), angle=90, size=3, hjust=0, vjust=0)
+voldemort + 
+  geom_rect(data=c
+            , aes(xmin=xmin, xmax=xmax
+                  , fill=factor(seq_along(xmin) %% 2))
+            , ymin=-Inf, ymax=Inf
+            , linetype="blank", alpha=0.2
+            , colour=scale_fill_manual(values=c("blue", "red"))) + 
+  theme(legend.position="none") + 
+  geom_rect(data=e
+            , aes(xmin=xmin, xmax=xmax
+                  , fill=factor(seq_along(xmin) %% 2))
+            , ymin=-Inf, ymax=Inf
+            , linetype="blank"
+            , colour=scale_fill_manual(values=c("black", "white")), alpha=0.2) + 
+  geom_text(data=c
+            , aes(x=xmin+((xmax-xmin)/2), y=0
+                  , label=text)
+            , angle=90, size=3, hjust=0, vjust=0)
